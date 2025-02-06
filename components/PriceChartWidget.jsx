@@ -50,11 +50,12 @@ export const PriceChartWidget = () => {
   }, []);
 
   return (
-    <div className="w-full border h-[80vh]">
+    <div className="w-full h-full">
       <div
         id={PRICE_CHART_ID}
         ref={containerRef}
         style={{ width: "100%", height: "100%" }}
+        className='text-sm'
       />
     </div>
   );
