@@ -1,42 +1,81 @@
 "use client"
 
-import { useState } from "react"
-import { Star, StarOff } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Star, StarOff, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface Token {
-  symbol: string
+  address: string
+  circulating_market_cap: string
+  decimals: string
+  exchange_rate: string
+  holders: string
+  icon_url: string
   name: string
-  price: number
-  change: number
+  symbol: string
+  total_supply: string
+  type: string
+  volume_24h: string
   isTracked: boolean
 }
 
-const initialTokens: Token[] = [
-  { symbol: "ETH", name: "Ethereum", price: 2432.45, change: 2.5, isTracked: false },
-  { symbol: "BTC", name: "Bitcoin", price: 43251.78, change: -1.2, isTracked: false },
-  { symbol: "SOL", name: "Solana", price: 98.34, change: 5.7, isTracked: false },
-  { symbol: "AVAX", name: "Avalanche", price: 34.56, change: -0.8, isTracked: false },
-  { symbol: "MATIC", name: "Polygon", price: 1.23, change: 3.4, isTracked: false },
-  { symbol: "LINK", name: "Chainlink", price: 18.9, change: 1.9, isTracked: false },
-  { symbol: "UNI", name: "Uniswap", price: 7.45, change: -2.1, isTracked: false },
-  { symbol: "AAVE", name: "Aave", price: 89.67, change: 4.3, isTracked: false },
-]
+const API_URL = "https://base.blockscout.com/api/v2/tokens?type=ERC-20"
 
 export const TokenList = () => {
-  const [tokens, setTokens] = useState(initialTokens)
+  const [tokens, setTokens] = useState<Token[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const toggleTracking = (symbol: string) => {
+  useEffect(() => {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(API_URL)
+        if (!response.ok) {
+          throw new Error("Failed to fetch tokens")
+        }
+        const data = await response.json()
+        const formattedTokens = data.items.map((item: Token) => ({
+          ...item,
+          isTracked: false,
+        }))
+        setTokens(formattedTokens)
+      } catch (err) {
+        setError((err as Error).message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTokens()
+  }, [])
+
+  const toggleTracking = (address: string) => {
     setTokens((prev) =>
-      prev.map((token) => (token.symbol === symbol ? { ...token, isTracked: !token.isTracked } : token)),
+      prev.map((token) => (token.address === address ? { ...token, isTracked: !token.isTracked } : token)),
     )
   }
 
   const sortedTokens = [...tokens].sort((a, b) => {
     if (a.isTracked && !b.isTracked) return -1
     if (!a.isTracked && b.isTracked) return 1
-    return 0
+    return b.circulating_market_cap.localeCompare(a.circulating_market_cap)
   })
+
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-[calc(100vh-8rem)] overflow-y-auto rounded-lg bg-gray-900 p-4 shadow-lg scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
@@ -44,28 +83,36 @@ export const TokenList = () => {
       <div className="space-y-2">
         {sortedTokens.map((token) => (
           <motion.div
-            key={token.symbol}
+            key={token.address}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
               token.isTracked ? "bg-gray-700 ring-1 ring-yellow-500/50" : "bg-gray-800 hover:bg-gray-700"
             }`}
           >
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-white">{token.symbol}</span>
-                <span className="text-xs text-gray-400">{token.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-300">${token.price.toLocaleString()}</span>
-                <span className={`text-xs ${token.change >= 0 ? "text-green-400" : "text-red-400"}`}>
-                  {token.change >= 0 ? "+" : ""}
-                  {token.change}%
-                </span>
+            <div className="flex items-center space-x-2">
+              <img src={token.icon_url || "/placeholder.svg"} alt={token.name} className="w-6 h-6 rounded-full" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-white">{token.symbol}</span>
+                  <span className="text-xs text-gray-400">{token.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-300">
+                    $
+                    {Number.parseFloat(token.exchange_rate).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Vol: ${Number.parseFloat(token.volume_24h).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
               </div>
             </div>
             <button
-              onClick={() => toggleTracking(token.symbol)}
+              onClick={() => toggleTracking(token.address)}
               className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-600 hover:text-white"
             >
               {token.isTracked ? (
