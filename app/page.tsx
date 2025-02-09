@@ -5,20 +5,22 @@ import { PriceChartWidget } from "@/components/PriceChartWidget"
 import { TradingControls } from "@/components/TradingControls"
 import { TokenList } from "@/components/TokenList"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { useReadContract } from "wagmi"
-import { abi } from "@/lib/UniswapV3Factory"
+// import { useReadContract } from "wagmi"
+// import { abi } from "@/lib/UniswapV3Factory"
+import { AiAdviceModal } from "@/components/AiAdviceModal"
 
-const USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+// const USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+// const WETH_ADDRESS="0x4200000000000000000000000000000000000006";
 
 export default function Home() {
   const [selectedToken, setSelectedToken] = useState<string | null>(null)
 
-  const { data: poolAddress } = useReadContract({
-    abi,
-    address: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
-    functionName: "getPool",
-    args: [selectedToken, USDC_ADDRESS, 500],
-  })
+  // const { data: poolAddress } = useReadContract({
+  //   abi,
+  //   address: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
+  //   functionName: "getPool",
+  //   args: [selectedToken, WETH_ADDRESS, 500],
+  // })
 
   const handleTokenSelect = (tokenAddress: string) => {
     setSelectedToken(tokenAddress)
@@ -39,7 +41,7 @@ export default function Home() {
           </aside>
           <div className="flex-grow">
             <div className="h-[calc(100vh-8rem)] border border-gray-800 rounded-lg overflow-hidden">
-              <PriceChartWidget poolAddress={poolAddress as string} />
+              <PriceChartWidget poolAddress={selectedToken as string} />
             </div>
           </div>
           <aside className="w-full lg:w-80 shrink-0">
@@ -47,6 +49,7 @@ export default function Home() {
           </aside>
         </div>
       </main>
+      <AiAdviceModal />
     </div>
   )
 }

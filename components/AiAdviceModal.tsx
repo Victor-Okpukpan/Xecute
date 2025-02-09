@@ -4,15 +4,19 @@ import { useState, useRef, useEffect } from "react";
 import { X, Bot, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+// import { useAccount } from "wagmi";
+import { useWalletClient } from 'wagmi'
 
 interface Message {
   id: string;
-  type: 'user' | 'ai';
+  type: "user" | "ai";
   content: string;
   timestamp: Date;
 }
 
 export const AiAdviceModal = () => {
+  const {data: walletConnectData} = useWalletClient();
+  // const { address } = useAccount();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,34 +34,44 @@ export const AiAdviceModal = () => {
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim()) return;
-
+  
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
       content: currentMessage,
       timestamp: new Date(),
     };
-
+  
     setMessages(prev => [...prev, userMessage]);
     setCurrentMessage("");
     setIsTyping(true);
-
-    // Simulate AI response
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      type: 'ai',
-      content: "Based on current market trends, I recommend monitoring DeFi protocols and gaming tokens on Base. The ecosystem shows strong potential for growth.",
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, aiMessage]);
-    setIsTyping(false);
+  
+    try {
+      const res = await fetch("/api/agent-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage.content,
+          data: walletConnectData,
+        }),
+      });
+      const data = await res.json();
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: data.response,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -80,7 +94,9 @@ export const AiAdviceModal = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className={`fixed bottom-0 right-0 w-full overflow-hidden bg-white shadow-xl transition-all sm:bottom-6 sm:right-6 sm:w-96 sm:rounded-lg ${isMinimized ? 'h-14' : 'h-[100vh] sm:h-[500px]'}`}
+          className={`fixed bottom-0 right-0 w-full overflow-hidden bg-white shadow-xl transition-all sm:bottom-6 sm:right-6 sm:w-96 sm:rounded-lg ${
+            isMinimized ? "h-14" : "h-[100vh] sm:h-[500px]"
+          }`}
         >
           <div className="flex h-14 items-center justify-between bg-blue-600 px-4">
             <div className="flex items-center gap-2 text-white">
@@ -93,7 +109,7 @@ export const AiAdviceModal = () => {
                 className="rounded p-1 text-white hover:bg-blue-500"
               >
                 <span className="block h-4 w-4 text-lg leading-none">
-                  {isMinimized ? '□' : '−'}
+                  {isMinimized ? "□" : "−"}
                 </span>
               </button>
               <button
@@ -112,13 +128,15 @@ export const AiAdviceModal = () => {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${
+                        message.type === "user" ? "justify-end" : "justify-start"
+                      }`}
                     >
                       <div
                         className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          message.type === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
+                          message.type === "user"
+                            ? "bg-blue-600 text-black"
+                            : "bg-gray-100 text-gray-900"
                         }`}
                       >
                         {message.content}
@@ -128,9 +146,8 @@ export const AiAdviceModal = () => {
                   {isTyping && (
                     <div className="flex justify-start">
                       <div className="max-w-[80%] rounded-lg bg-gray-100 px-4 py-2">
-                        <span className="inline-flex items-center gap-1">
-                          Typing
-                          <span className="animate-pulse">...</span>
+                        <span className="inline-flex text-black items-center gap-1">
+                          Typing<span className="animate-pulse">...</span>
                         </span>
                       </div>
                     </div>
@@ -146,7 +163,7 @@ export const AiAdviceModal = () => {
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask about market trends, tokens, or trading strategies..."
-                    className="flex-1 resize-none rounded-lg border border-gray-200 p-2 text-sm sm:text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="flex-1 text-black resize-none rounded-lg border border-gray-200 p-2 text-sm sm:text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     rows={2}
                   />
                   <Button

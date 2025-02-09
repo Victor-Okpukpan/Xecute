@@ -2,22 +2,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, StarOff, Loader2 } from "lucide-react";
+import { Star, StarOff } from "lucide-react";
 import { motion } from "framer-motion";
 import type React from "react"; // Added import for React
+import { dummyTokens } from "@/lib/constants";
+
+// interface Token {
+//   address: string;
+//   circulating_market_cap: string;
+//   decimals: string;
+//   exchange_rate: string;
+//   holders: string;
+//   icon_url: string;
+//   name: string;
+//   symbol: string;
+//   total_supply: string;
+//   type: string;
+//   volume_24h: string;
+//   isTracked: boolean;
+// }
 
 interface Token {
+  token: string;
+  symbol: string
   address: string;
-  circulating_market_cap: string;
-  decimals: string;
-  exchange_rate: string;
-  holders: string;
-  icon_url: string;
-  name: string;
-  symbol: string;
-  total_supply: string;
-  type: string;
-  volume_24h: string;
+  pair: string;
   isTracked: boolean;
 }
 
@@ -25,34 +34,41 @@ interface TokenListProps {
   onTokenSelect: (tokenAddress: string) => void;
 }
 
-const API_URL = "https://base.blockscout.com/api/v2/tokens?type=ERC-20";
+// const API_URL = "https://base.blockscout.com/api/v2/tokens?type=ERC-20";
 
 export const TokenList: React.FC<TokenListProps> = ({ onTokenSelect }) => {
   const [tokens, setTokens] = useState<Token[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
+
+  // useEffect(() => {
+  //   const fetchTokens = async () => {
+  //     try {
+  //       const response = await fetch(API_URL);
+  //       if (!response.ok) {
+  //         throw new Error("Failed to fetch tokens");
+  //       }
+  //       const data = await response.json();
+  //       const formattedTokens = data.items.map((item: Token) => ({
+  //         ...item,
+  //         isTracked: false,
+  //       }));
+  //       setTokens(formattedTokens);
+  //     } catch (err) {
+  //       setError((err as Error).message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchTokens();
+  // }, []);
 
   useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        const response = await fetch(API_URL);
-        if (!response.ok) {
-          throw new Error("Failed to fetch tokens");
-        }
-        const data = await response.json();
-        const formattedTokens = data.items.map((item: Token) => ({
-          ...item,
-          isTracked: false,
-        }));
-        setTokens(formattedTokens);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchTokens();
+    
+
+    setTokens(dummyTokens)
   }, []);
 
   const toggleTracking = (address: string) => {
@@ -66,30 +82,30 @@ export const TokenList: React.FC<TokenListProps> = ({ onTokenSelect }) => {
   };
 
   const handleTokenClick = (token: Token) => {
-    onTokenSelect(token.address);
+    onTokenSelect(token.pair);
   };
 
   const sortedTokens = [...tokens].sort((a, b) => {
     if (a.isTracked && !b.isTracked) return -1;
     if (!a.isTracked && b.isTracked) return 1;
-    return b.circulating_market_cap.localeCompare(a.circulating_market_cap);
+    return b.token.localeCompare(a.token);
   });
 
-  if (loading) {
-    return (
-      <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
+  //       <Loader2 className="h-8 w-8 animate-spin text-white" />
+  //     </div>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
-        <p className="text-red-500">Error: {error}</p>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="h-[calc(100vh-8rem)] flex items-center justify-center rounded-lg bg-gray-900 p-4 shadow-lg">
+  //       <p className="text-red-500">Error: {error}</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="h-[calc(100vh-8rem)] overflow-y-auto rounded-lg bg-gray-900 p-4 shadow-lg scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
@@ -97,10 +113,10 @@ export const TokenList: React.FC<TokenListProps> = ({ onTokenSelect }) => {
       <div className="space-y-2">
         {sortedTokens.map((token) => (
           <motion.div
-            key={token.address}
+            key={token.address} 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
+            className={`flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors ${
               token.isTracked
                 ? "bg-gray-700 ring-1 ring-yellow-500/50"
                 : "bg-gray-800 hover:bg-gray-700"
@@ -108,17 +124,17 @@ export const TokenList: React.FC<TokenListProps> = ({ onTokenSelect }) => {
             onClick={() => handleTokenClick(token)}
           >
             <div className="flex items-center space-x-2">
-              <img
+              {/* <img
                 src={token.icon_url}
                 alt={token.name}
                 className="w-6 h-6 rounded-full"
-              />
+              /> */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-white">{token.symbol}</span>
-                  <span className="text-xs text-gray-400">{token.name}</span>
+                  <span className="text-xs text-gray-400">{token.token}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-300">
                     $
                     {Number.parseFloat(token.exchange_rate).toLocaleString(
@@ -136,7 +152,7 @@ export const TokenList: React.FC<TokenListProps> = ({ onTokenSelect }) => {
                       { maximumFractionDigits: 0 }
                     )}
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
             <button

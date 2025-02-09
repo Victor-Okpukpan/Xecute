@@ -24,7 +24,7 @@ export const PriceChartWidget = ({ poolAddress }) => {
         window.createMyWidget(PRICE_CHART_ID, {
           autoSize: true,
           chainId: "0x2105",
-          pairAddress: address,
+          pairAddress: poolAddress,
           defaultInterval: "1D",
           timeZone:
             Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Etc/UTC",
@@ -70,7 +70,7 @@ export const PriceChartWidget = ({ poolAddress }) => {
 
   return (
     <div className="w-full h-full">
-      {address ? (
+      {poolAddress ? (
         <div
           id={PRICE_CHART_ID}
           style={{ width: "100%", height: "100%" }}
